@@ -29,7 +29,7 @@ The application uses mySQL and JavaScript to combine different tables and allows
 
 ### Sample user input:
 ![Sample user input](Assets/sampleUserInput.png)
-ß
+
 ## Demo
 [View Demo Here](https://drive.google.com/file/d/1c7-uodF9eeSMpshKfyOFmGoJ7IJkJHIX/view)
 
