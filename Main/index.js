@@ -188,7 +188,7 @@ function start() {
                             return console.error(err.message);
                         }
 
-                        console.log("Employee added: " + results);
+                        console.log("Role added: " + results);
                     });
                 /*
                     "INSERT INTO role SET ?",
@@ -206,14 +206,15 @@ function start() {
                     setTimeout(start, 200);
                     break;
                 case "Add Department":
-                    "INSERT INTO department SET ?",
-                    {
-                        dept_name: answer.newDepartment,
-                    },
-                        function (err) {
-                            if (err) throw err;
-                            console.log("Employee Added Successfully!");
-                        };
+                    var e_sql = "INSERT INTO department (dept_name) VALUES (?)";
+                    var params = [answer.newDepartment];
+
+                    connection.query(e_sql, params, (err, results, fields) => {
+                        if (err) {
+                            return console.error(err.message);
+                        }
+
+                    });
                     readDepartments();
                     setTimeout(start, 200);
                     break;
