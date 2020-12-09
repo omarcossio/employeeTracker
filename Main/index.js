@@ -29,6 +29,8 @@ function validateEmpty(name) {
 var existingEmployees = [];
 var roles = [];
 var departments = [];
+var managerId = 0;
+var roleName = 0;
 
 // function which prompts the user for what action they should take
 function start() {
@@ -131,42 +133,35 @@ function start() {
                     setTimeout(start, 200);
                     break;
                 case "Add Employee":
-                    //connection.query("INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES('"+answer.firstName + "', '"+ answer.lastName + "', '" + answer.role + "', '" + answer.manager+"')");
-                    //var query = "INSERT "
 
-                    var roleName;
                     connection.query("SELECT * FROM role WHERE ?", { title: answer.role }, function (err, res) {
                         if (err) throw err;
                         roleName = res[0].id;
                         //console.log("*****The Id of the role you selcted is: ");
                         //console.log(roleName);
 
+                        var managersName = answer.manager;
+                        var managersNameArr = managersName.split(" ");
+
+                        connection.query("SELECT * FROM employee WHERE ?", { first_name: managersNameArr[0] }, function (err, res) {
+                            if (err) throw err;
+                            managerId = res[0].id;
+                            //console.log("*****The Id of the manager you selcted is: ");
+                            //console.log(managerId);
+
+                            //console.log("*******name: " + answer.firstName + " " + answer.lastName, " ----  roleId: " + roleName + "  ----- managerId: " + managerId);
+                            var e_sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)";
+                            var params = [answer.firstName, answer.lastName, roleName, managerId];
+                            connection.query(e_sql, params, (err, results) => {
+                                if (err) {
+                                    return console.error(err.message);
+                                }
+
+                            });
+
+                        });
+
                     });
-                    var managerFirst = answer.manager;
-                    managerFirst = managerFirst.split(" ");
-                    var managerId;
-                    //connection.query("SELECT * FROM employee WHERE ? AND ?", { first_name: managerFirst[0], last_name: managerFirst[1]}, function(err, res) {
-
-                    connection.query("SELECT * FROM employee WHERE ?", { first_name: managerFirst[0] }, function (err, res) {
-                        if (err) throw err;
-                        managerId = res[0].id;
-                        console.log("*****The Id of the manager you selcted is: ");
-                        console.log(managerId);
-
-                    });
-
-
-                    var e_sql = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)";
-                    var params = [answer.firstName, answer.lastName, roleName, managerId];
-
-                    connection.query(e_sql, params, (err, results, fields) => {
-                        if (err) {
-                            return console.error(err.message);
-                        }
-
-                        console.log("Employee added: " + results);
-                    });
-
                     readEmployees();
                     setTimeout(start, 200);
                     break;
@@ -176,32 +171,22 @@ function start() {
                     connection.query("SELECT * FROM department WHERE ?", { dept_name: answer.department }, function (err, res) {
                         if (err) throw err;
                         deptId = res[0].id;
+
                         console.log("*****The Id of the DEPT you selcted is: ");
                         console.log(deptId);
+                        var e_sql = "INSERT INTO role (title, salary, department_id) VALUES (?,?,?)";
+                        var params = [answer.newRole, answer.salary, deptId];
+
+                        connection.query(e_sql, params, (err, results) => {
+                            if (err) {
+                                return console.error(err.message);
+                            }
+
+                            console.log("Role added: " + results);
+                        });
 
                     });
-                    var e_sql = "INSERT INTO role (title, salary, department_id) VALUES (?,?,?)";
-                    var params = [answer.newRole, answer.salary, deptId];
 
-                    connection.query(e_sql, params, (err, results, fields) => {
-                        if (err) {
-                            return console.error(err.message);
-                        }
-
-                        console.log("Role added: " + results);
-                    });
-                /*
-                    "INSERT INTO role SET ?",
-                    {
-                        title: answer.newRole,
-                        salary: answer.salary,
-                        department_id: answer.department,
-                    },
-                        function (err) {
-                            if (err) throw err;
-                            console.log("Role Added Successfully!");
-                        };
-*/
                     readRoleTitles();
                     setTimeout(start, 200);
                     break;
@@ -219,12 +204,40 @@ function start() {
                     setTimeout(start, 200);
                     break;
                 case "Update Employee Role":
-                    "UPDATE employee SET ? WHERE ?",
-                        [
-                            {
-                                role_id: '00',
-                            }
-                        ]
+                    var employessName = answer.updateEmployee;
+                    var employessNameArr = employessName.split(" ");
+                    var employee2Update;
+
+                    connection.query("SELECT * FROM employee WHERE ?", { first_name: employessNameArr[0] }, function (err, res) {
+                        if (err) throw err;
+                        employee2Update = res[0].id;
+                        //console.log("*****The Id of the employee you to update is: ");
+                        //console.log(employee2Update);
+
+                        var role2Update;
+
+                        connection.query("SELECT * FROM role WHERE ?", { title: answer.updateRole }, function (err, res) {
+                            if (err) throw err;
+                            role2Update = res[0].id;
+                            //console.log("*****The Id of the role you to update is: ");
+                            //console.log(role2Update);
+
+                            var e_sql = "UPDATE employee SET ? WHERE ?";
+                            var params = [{role_id: role2Update}, {id: employee2Update}];
+
+                            connection.query(e_sql, params, (err, results) => {
+                                if (err) {
+                                    return console.error(err.message);
+                                }
+
+                            });
+
+                        });
+
+                    });
+
+
+                    readEmployees();
                     setTimeout(start, 200);
                     break;
                 default: console.log("nothing to show");
@@ -244,7 +257,7 @@ function start() {
 }
 
 function printAllEmployees() {
-    connection.query("SELECT employee.id, first_name,last_name,role.title,role.salary,department.dept_name FROM employee LEFT JOIN role ON employee.role_id=role.id LEFT JOIN department ON role.department_id=department.id", function (err, res) {
+    connection.query("SELECT employee.id, first_name,last_name,role.title,role.salary,department.dept_name, manager_id FROM employee LEFT JOIN role ON employee.role_id=role.id LEFT JOIN department ON role.department_id=department.id", function (err, res) {
         if (err) throw err;
         //existingEmployees = res;
 
